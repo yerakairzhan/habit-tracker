@@ -12,17 +12,13 @@ import (
 var DB *gorm.DB
 
 func ConnectDatabase() {
-	// Use SSL for Neon, optional disable for local
-	sslmode := getEnv("DB_SSLMODE", "disable") // set DB_SSLMODE=require in .env for Neon
-
 	dsn := fmt.Sprintf(
-		"host=%s user=%s password=%s dbname=%s port=%s sslmode=%s TimeZone=Asia/Shanghai",
-		getEnv("DB_HOST", "localhost"),
-		getEnv("DB_USER", "postgres"),
-		getEnv("DB_PASSWORD", "postgres"),
-		getEnv("DB_NAME", "habit_tracker"),
+		"host=%s user=%s password=%s dbname=%s port=%s sslmode=require TimeZone=Asia/Shanghai",
+		getEnv("DB_HOST", "ep-wild-waterfall-ahlcmy5k-pooler.c-3.us-east-1.aws.neon.tech"),
+		getEnv("DB_USER", "neondb_owner"),
+		getEnv("DB_PASSWORD", "npg_vEoSLdGiZh90"),
+		getEnv("DB_NAME", "neondb"),
 		getEnv("DB_PORT", "5432"),
-		sslmode,
 	)
 
 	database, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
