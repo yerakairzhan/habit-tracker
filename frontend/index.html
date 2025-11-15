@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Habit Tracker — Cyber Glass</title>
+
+    <!-- Tailwind CDN for utility classes -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Fonts & Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        :root{
+            --bg-1: #05120f;
+            --bg-2: #071915;
+            --glass: rgba(10,18,15,0.45);
+            --glass-2: rgba(14,26,22,0.65);
+            --neon: #10b981; /* main neon green */
+            --muted: rgba(200,220,210,0.18);
+            --accent: rgba(16,185,129,0.12);
+            --card-border: rgba(255,255,255,0.06);
+            --glass-border: rgba(255,255,255,0.06);
+        }
+
+        html,body,#app{height:100%}
+        body{
+            margin:0;
+            font-family:Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+            background: radial-gradient(1200px 600px at 10% 10%, rgba(16,185,129,0.06), transparent 5%),
+            radial-gradient(1000px 500px at 90% 90%, rgba(16,185,129,0.03), transparent 10%),
+            linear-gradient(135deg, var(--bg-1) 0%, var(--bg-2) 100%);
+            color: #e6f7ef;
+            -webkit-font-smoothing:antialiased;
+        }
+
+        /* Page container */
+        .shell{
+            max-width:1100px;
+            margin:36px auto;
+            padding:28px;
+        }
+
+        /* Glass card */
+        .glass {
+            background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.02));
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(12px) saturate(120%);
+            box-shadow: 0 6px 30px rgba(2,6,4,0.45);
+        }
+
+        /* Header */
+        .header {
+            display:flex;
+            gap:16px;
+            align-items:center;
+            justify-content:space-between;
+        }
+        .brand {
+            display:flex;
+            gap:12px;
+            align-items:center;
+        }
+        .logo {
+            width:56px;
+            height:56px;
+            border-radius:12px;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            background: linear-gradient(135deg, rgba(16,185,129,0.16), rgba(16,185,129,0.06));
+            border: 1px solid rgba(16,185,129,0.14);
+            box-shadow: 0 6px 18px rgba(16,185,129,0.03), inset 0 -4px 10px rgba(0,0,0,0.25);
+        }
+        .logo svg { filter: drop-shadow(0 6px 10px rgba(16,185,129,0.05)); }
+
+        .title {
+            font-weight:700;
+            font-size:18px;
+            letter-spacing:0.2px;
+        }
+        .subtitle {
+            color: rgba(200,230,210,0.6);
+            font-size:13px;
+            margin-top:2px;
+        }
+
+        /* Controls */
+        .controls { display:flex; gap:12px; align-items:center; }
+        .btn {
+            display:inline-flex;
+            align-items:center;
+            gap:8px;
+            padding:10px 14px;
+            border-radius:10px;
+            background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.06));
+            border: 1px solid rgba(255,255,255,0.03);
+            cursor:pointer;
+            transition: transform .15s ease, box-shadow .15s;
+        }
+        .btn:hover { transform: translateY(-3px); box-shadow:0 12px 30px rgba(2,6,4,0.45); }
+        .btn.neon {
+            background: linear-gradient(180deg, rgba(16,185,129,0.12), rgba(16,185,129,0.04));
+            border: 1px solid rgba(16,185,129,0.22);
+            color: var(--neon);
+        }
+        .btn.ghost {
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.04);
+            color: rgba(230,247,239,0.9);
+        }
+
+        /* Profile */
+        .profile {
+            display:flex;
+            gap:16px;
+            align-items:center;
+        }
+        .avatar {
+            width:76px;
+            height:76px;
+            border-radius:18px;
+            overflow:hidden;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            background: linear-gradient(135deg,#05120f,#07231a);
+            border: 1px solid rgba(255,255,255,0.04);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6), inset 0 -6px 12px rgba(16,185,129,0.03);
+        }
+        .avatar img { width:100%; height:100%; object-fit:cover; display:block; }
+
+        /* Layout */
+        .main {
+            margin-top:20px;
+            display:grid;
+            grid-template-columns: 1fr 360px;
+            gap:20px;
+        }
+
+        /* Left column */
+        .left {
+            display:flex;
+            flex-direction:column;
+            gap:16px;
+        }
+
+        /* Create box */
+        .create-box {
+            padding:18px;
+            border-radius:14px;
+        }
+
+        .input, textarea {
+            background: rgba(0,0,0,0.25);
+            border: 1px solid rgba(255,255,255,0.04);
+            padding:10px 12px;
+            border-radius:10px;
+            color: #eafaf0;
+            outline:none;
+            width:100%;
+            transition: box-shadow .12s, border-color .12s;
+        }
+        .input:focus, textarea:focus {
+            border-color: rgba(16,185,129,0.6);
+            box-shadow: 0 6px 24px rgba(16,185,129,0.06);
+        }
+
+        /* Habit card */
+        .habit {
+            padding:16px;
+            border-radius:12px;
+            display:flex;
+            justify-content:space-between;
+            gap:12px;
+            transition: transform .12s, box-shadow .12s, background .12s;
+            cursor:pointer;
+        }
+        .habit:hover { transform: translateY(-6px); box-shadow: 0 18px 40px rgba(2,6,4,0.5); }
+        .habit .meta { flex:1; overflow:hidden; }
+        .habit h3 { font-weight:700; font-size:16px; margin-bottom:4px; }
+        .habit p { color: rgba(220,240,230,0.7); font-size:13px; margin:0; }
+
+        /* grid mini */
+        .mini-grid {
+            display:grid;
+            grid-template-columns: repeat(13, 10px);
+            gap:4px;
+            align-self:center;
+            margin-left:12px;
+        }
+        .mini-cell {
+            width:10px; height:10px; border-radius:2px;
+            background: rgba(255,255,255,0.03);
+            transition: transform .12s, box-shadow .12s, background .12s;
+            box-shadow: inset 0 -3px 6px rgba(0,0,0,0.4);
+        }
+        .mini-cell.done {
+            background: linear-gradient(180deg, rgba(16,185,129,0.98), rgba(16,185,129,0.78));
+            box-shadow: 0 6px 18px rgba(16,185,129,0.08), inset 0 -2px 6px rgba(0,0,0,0.16);
+            transform: translateY(-1px) scale(1.02);
+        }
+
+        /* Big year grid */
+        .year-grid {
+            display:grid;
+            grid-template-columns: repeat(52, 12px);
+            gap:6px;
+            padding:8px;
+            border-radius:10px;
+        }
+        .year-cell {
+            width:12px; height:12px; border-radius:3px;
+            background: rgba(255,255,255,0.02);
+            transition: transform .12s, box-shadow .12s, opacity .12s;
+            opacity: 0.9;
+            cursor:pointer;
+        }
+        .year-cell.done {
+            background: linear-gradient(180deg, rgba(16,185,129,0.96), rgba(16,185,129,0.7));
+            box-shadow: 0 8px 22px rgba(16,185,129,0.06);
+            transform: translateY(-2px);
+        }
+        .year-cell:hover { transform: scale(1.25); z-index:10; }
+
+        /* small utilities */
+        .muted { color: rgba(200,230,210,0.55); }
+        .small { font-size:13px; color: rgba(200,230,210,0.65); }
+        .stat {
+            display:inline-flex;
+            align-items:center;
+            gap:8px;
+            padding:8px 10px;
+            border-radius:999px;
+            background: rgba(255,255,255,0.02);
+            border: 1px solid rgba(255,255,255,0.03);
+            font-weight:600;
+            color:var(--neon);
+        }
+
+        /* Empty states */
+        .empty {
+            padding:32px;
+            text-align:center;
+            border-radius:12px;
+        }
+
+        /* Responsive */
+        @media (max-width: 980px){
+            .main { grid-template-columns: 1fr; }
+            .mini-grid { display:none; }
+            .year-grid { grid-template-columns: repeat(26, 12px); overflow-x:auto; }
+            .shell { padding:18px; margin:18px auto; }
+        }
+    </style>
+</head>
+<body>
+<div id="app"></div>
+
+<!-- React UMD -->
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+<script type="text/babel">
+    const { useState, useEffect } = React;
+    const API_URL = 'http://localhost:8080/api/v1'; // backend unchanged
+
+    function App(){
+        const [user, setUser] = useState(null);
+        const [habits, setHabits] = useState([]);
+        const [isLogin, setIsLogin] = useState(true);
+        const [loading, setLoading] = useState(false);
+        const [formData, setFormData] = useState({ login: '', password: '', name: '', bio: '' });
+        const [showCreateForm, setShowCreateForm] = useState(false);
+        const [newHabit, setNewHabit] = useState({ name: '', goal: '', is_public: false });
+        const [selectedHabit, setSelectedHabit] = useState(null);
+
+        useEffect(() => {
+            const token = localStorage.getItem('token');
+            if (token) {
+                fetchUser(token);
+                fetchHabits(token);
+            }
+        }, []);
+
+        const fetchUser = async (token) => {
+            try {
+                const res = await fetch(`${API_URL}/me`, { headers: { 'Authorization': `Bearer ${token}` } });
+                if (res.ok) {
+                    const data = await res.json();
+                    setUser(data);
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        };
+
+        const fetchHabits = async (token) => {
+            try {
+                const res = await fetch(`${API_URL}/habits`, { headers: { 'Authorization': `Bearer ${token}` } });
+                if (res.ok) {
+                    const data = await res.json();
+                    setHabits(data || []);
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        };
+
+        const handleAuth = async () => {
+            if (!formData.login || !formData.password) return;
+            setLoading(true);
+            const endpoint = isLogin ? '/login' : '/register';
+            try {
+                const res = await fetch(`${API_URL}${endpoint}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData)
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    localStorage.setItem('token', data.token);
+                    setUser(data.user);
+                    fetchHabits(data.token);
+                } else {
+                    const txt = await res.text();
+                    alert('Auth failed: ' + txt);
+                }
+            } catch (err) {
+                alert('Error: ' + err.message);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        const createHabit = async () => {
+            if (!newHabit.name) return;
+            setLoading(true);
+            const token = localStorage.getItem('token');
+            try {
+                const res = await fetch(`${API_URL}/habits`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify(newHabit)
+                });
+                if (res.ok) {
+                    setNewHabit({ name: '', goal: '', is_public: false });
+                    setShowCreateForm(false);
+                    fetchHabits(token);
+                } else {
+                    alert('Failed to create habit');
+                }
+            } catch (err) {
+                alert('Error creating habit');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        const toggleCompletion = async (habitId, date) => {
+            const token = localStorage.getItem('token');
+            try {
+                await fetch(`${API_URL}/habits/${habitId}/toggle`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ date })
+                });
+                fetchHabits(token);
+            } catch (err) {
+                console.error(err);
+            }
+        };
+
+        const deleteHabit = async (id) => {
+            if (!confirm('Delete this habit?')) return;
+            const token = localStorage.getItem('token');
+            try {
+                await fetch(`${API_URL}/habits/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+                setSelectedHabit(null);
+                fetchHabits(token);
+            } catch (err) {
+                alert('Error deleting habit');
+            }
+        };
+
+        const undoLastCompletion = async (habitId) => {
+            const token = localStorage.getItem('token');
+            try {
+                await fetch(`${API_URL}/habits/${habitId}/undo`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
+                fetchHabits(token);
+            } catch (err) {
+                alert('No completions to undo');
+            }
+        };
+
+        const togglePublic = async (id, isPublic) => {
+            const token = localStorage.getItem('token');
+            try {
+                await fetch(`${API_URL}/habits/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ is_public: !isPublic })
+                });
+                fetchHabits(token);
+            } catch (err) {
+                console.error(err);
+            }
+        };
+
+        const getYearGrid = (habit) => {
+            const days = 365;
+            const grid = [];
+            const today = new Date();
+            const completedDates = new Set((habit.completions || []).map(c => c.date_completed.split('T')[0]));
+            for (let i = days - 1; i >= 0; i--) {
+                const date = new Date(today);
+                date.setDate(date.getDate() - i);
+                const dateStr = date.toISOString().split('T')[0];
+                grid.push({ date: dateStr, completed: completedDates.has(dateStr) });
+            }
+            return grid;
+        };
+
+        const calculateStats = (habit) => {
+            const completions = habit.completions || [];
+            const daysSinceCreation = Math.ceil((new Date() - new Date(habit.created_at)) / (1000 * 60 * 60 * 24));
+            const rate = daysSinceCreation > 0 ? Math.round((completions.length / daysSinceCreation) * 100) : 0;
+            const today = new Date().toISOString().split('T')[0];
+            const completedToday = (habit.completions || []).some(c => c.date_completed.split('T')[0] === today);
+            return { rate, completedToday };
+        };
+
+        const logout = () => {
+            localStorage.removeItem('token');
+            setUser(null);
+            setHabits([]);
+        };
+
+        // --- UI: Login/Register ---
+        if (!user) {
+            return (
+                <div className="shell">
+                    <div className="glass p-6 rounded-xl max-w-md mx-auto">
+                        <div className="header mb-4">
+                            <div className="brand">
+                                <div className="logo">
+                                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <rect x="3" y="3" width="18" height="18" rx="5" stroke="rgba(16,185,129,0.18)" strokeWidth="1.5"/>
+                                        <path d="M7 12h10M12 7v10" stroke="var(--neon)" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <div className="title">Habit Tracker</div>
+                                    <div className="subtitle">Cyber Glass · Neon edition</div>
+                                </div>
+                            </div>
+                            <div className="muted small">v6.1.21</div>
+                        </div>
+
+                        <h2 className="text-2xl font-bold mb-4">{isLogin ? 'Welcome back' : 'Create an account'}</h2>
+
+                        <div className="space-y-3 mb-4">
+                            <input className="input" placeholder="Username" value={formData.login} onChange={(e)=>setFormData({...formData, login:e.target.value})} />
+                            <input className="input" placeholder="Password" type="password" value={formData.password} onChange={(e)=>setFormData({...formData, password:e.target.value})} onKeyPress={(e)=>e.key==='Enter'&&handleAuth()} />
+                            {!isLogin && <>
+                                <input className="input" placeholder="Full name" value={formData.name} onChange={(e)=>setFormData({...formData, name:e.target.value})} />
+                                <textarea className="input" placeholder="Bio (optional)" rows="3" value={formData.bio} onChange={(e)=>setFormData({...formData, bio:e.target.value})}></textarea>
+                            </>}
+                        </div>
+
+                        <div className="flex gap-3">
+                            <button className="btn neon flex-1" onClick={handleAuth} disabled={loading}>
+                                {loading ? 'Please wait...' : (isLogin ? 'Login' : 'Register')}
+                            </button>
+                            <button className="btn ghost" onClick={()=>setIsLogin(!isLogin)}>
+                                {isLogin ? 'Sign up' : 'Already have account'}
+                            </button>
+                        </div>
+
+                        <div className="small muted mt-4 text-center">Your backend stays unchanged. All requests go to <code className="text-xs">http://localhost:8080/api/v1</code></div>
+                    </div>
+                </div>
+            );
+        }
+
+        // --- Selected Habit detailed view ---
+        if (selectedHabit) {
+            const habit = habits.find(h => h.id === selectedHabit);
+            if (!habit) return null;
+            const grid = getYearGrid(habit);
+            const stats = calculateStats(habit);
+
+            return (
+                <div className="shell">
+                    <div className="glass p-5 rounded-xl">
+                        <div className="header mb-4">
+                            <div className="brand">
+                                <div className="logo">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="5" stroke="rgba(16,185,129,0.12)" strokeWidth="1.2"/><path d="M12 7v10M7 12h10" stroke="var(--neon)" strokeWidth="1.4" strokeLinecap="round"/></svg>
+                                </div>
+                                <div>
+                                    <div className="title">{habit.name}</div>
+                                    <div className="subtitle">{habit.goal}</div>
+                                </div>
+                            </div>
+                            <div className="controls">
+                                <div className="stat">{stats.rate}%</div>
+                                <button className="btn ghost" onClick={()=>setSelectedHabit(null)}>Back</button>
+                            </div>
+                        </div>
+
+                        <div className="year-grid glass rounded-lg p-4 mb-4">
+                            {grid.map((d, i) => (
+                                <div
+                                    key={i}
+                                    title={d.date}
+                                    onClick={() => toggleCompletion(habit.id, d.date)}
+                                    className={"year-cell " + (d.completed ? 'done' : '')}
+                                />
+                            ))}
+                        </div>
+
+                        <div className="flex gap-3">
+                            <button className="btn neon" onClick={()=>undoLastCompletion(habit.id)}>Undo</button>
+                            <button className="btn ghost" onClick={()=>togglePublic(habit.id, habit.is_public)}>
+                                {habit.is_public ? 'Make Private' : 'Make Public'}
+                            </button>
+                            <button className="btn" onClick={()=>deleteHabit(habit.id)} style={{borderColor:'rgba(255,60,60,0.12)', color:'rgba(255,120,120,0.95)'}}>Delete</button>
+                            <div className="muted small ml-auto">Today: <span style={{color: stats.completedToday ? 'var(--neon)' : 'rgba(200,220,210,0.6)'}}> {stats.completedToday ? 'Done' : 'Not done'}</span></div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // --- Main dashboard ---
+        return (
+            <div className="shell">
+                <div className="header glass p-5 rounded-xl">
+                    <div className="brand">
+                        <div className="logo">
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="6" stroke="rgba(16,185,129,0.16)" strokeWidth="1.2"/><path d="M7 12h10M12 7v10" stroke="var(--neon)" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                        </div>
+                        <div>
+                            <div className="title">Habit Tracker</div>
+                            <div className="subtitle">Cyber Glass · Neon edition</div>
+                        </div>
+                    </div>
+
+                    <div className="profile">
+                        <div className="avatar">
+                            {user.avatar_url ? <img src={user.avatar_url} alt={user.name} /> : <div style={{padding:'8px', color:'#bff7d9', fontWeight:700}}>{user.name[0].toUpperCase()}</div>}
+                        </div>
+                        <div>
+                            <div style={{fontWeight:800}}>{user.name}</div>
+                            <div className="small muted">{user.bio || `Hi, I'm ${user.name} — building better habits.`}</div>
+                        </div>
+
+                        <div style={{marginLeft:'16px'}} className="controls">
+                            <button className="btn neon" onClick={()=>setShowCreateForm(!showCreateForm)}>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /></svg>
+                                Create
+                            </button>
+                            <button className="btn ghost" onClick={logout}>Logout</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="main">
+                    <div className="left">
+                        <div className="glass create-box rounded-xl p-4">
+                            {showCreateForm ? (
+                                <>
+                                    <div className="flex items-center justify-between mb-3">
+                                        <div>
+                                            <div style={{fontWeight:700}}>Create new habit</div>
+                                            <div className="small muted">Small steps every day — neon powered ✨</div>
+                                        </div>
+                                        <div className="small muted">Make public <input type="checkbox" checked={newHabit.is_public} onChange={(e)=>setNewHabit({...newHabit, is_public:e.target.checked})} style={{marginLeft:8}} /></div>
+                                    </div>
+
+                                    <div className="space-y-3 mb-3">
+                                        <input className="input" placeholder="Habit name" value={newHabit.name} onChange={(e)=>setNewHabit({...newHabit, name:e.target.value})} />
+                                        <input className="input" placeholder="Goal (e.g. 10 pushups)" value={newHabit.goal} onChange={(e)=>setNewHabit({...newHabit, goal:e.target.value})} />
+                                    </div>
+
+                                    <div className="flex gap-3">
+                                        <button className="btn neon" onClick={createHabit}>Create</button>
+                                        <button className="btn ghost" onClick={()=>{ setShowCreateForm(false); setNewHabit({ name:'', goal:'', is_public:false }); }}>Cancel</button>
+                                    </div>
+                                </>
+                            ) : (
+                                <div className="empty glass rounded-lg p-6">
+                                    <div style={{fontWeight:700, fontSize:16}}>No time like the present</div>
+                                    <div className="small muted mb-4">Create a habit and track your progress with a glowing grid.</div>
+                                    <button className="btn neon" onClick={()=>setShowCreateForm(true)}>Create your first habit</button>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="space-y-3">
+                            {habits.map(habit => {
+                                const grid = getYearGrid(habit).slice(-52);
+                                const stats = calculateStats(habit);
+                                return (
+                                    <div key={habit.id} className="glass habit p-4 rounded-lg" onClick={()=>setSelectedHabit(habit.id)}>
+                                        <div className="meta">
+                                            <h3>{habit.name}</h3>
+                                            <p>{habit.goal}</p>
+                                            <div className="small muted mt-2">Created: {new Date(habit.created_at).toLocaleDateString()}</div>
+                                        </div>
+
+                                        <div style={{display:'flex', alignItems:'center'}}>
+                                            <div className="mini-grid" aria-hidden>
+                                                {grid.map((d,i)=>(
+                                                    <div key={i} className={"mini-cell " + (d.completed ? 'done' : '')}></div>
+                                                ))}
+                                            </div>
+
+                                            <div style={{marginLeft:12, textAlign:'right'}}>
+                                                <div className="stat">{stats.rate}%</div>
+                                                <div className="small muted" style={{marginTop:6}}>{stats.completedToday ? 'Done today' : 'Not yet'}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+
+                        {habits.length === 0 && !showCreateForm && (
+                            <div className="glass empty rounded-lg p-6 mt-3">
+                                <div style={{fontWeight:700}}>No habits yet</div>
+                                <div className="small muted mb-4">Start with a single habit — consistency beats intensity.</div>
+                                <button className="btn neon" onClick={()=>setShowCreateForm(true)}>Create habit</button>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Right column */}
+                    <aside>
+                        <div className="glass p-4 rounded-xl mb-4">
+                            <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+                                <div>
+                                    <div style={{fontWeight:800}}>Quick Stats</div>
+                                    <div className="small muted">At a glance</div>
+                                </div>
+                                <div className="small muted">{new Date().toLocaleDateString()}</div>
+                            </div>
+
+                            <div style={{display:'grid', gap:12, marginTop:12}}>
+                                <div className="glass p-3 rounded-lg" style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+                                    <div>
+                                        <div className="small muted">Habits</div>
+                                        <div style={{fontWeight:800, fontSize:18}}>{habits.length}</div>
+                                    </div>
+                                    <div className="small muted">Active</div>
+                                </div>
+
+                                <div className="glass p-3 rounded-lg" style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+                                    <div>
+                                        <div className="small muted">Streak (approx.)</div>
+                                        <div style={{fontWeight:800, fontSize:18}}>—</div>
+                                    </div>
+                                    <div className="small muted">Coming soon</div>
+                                </div>
+
+                                <div className="glass p-3 rounded-lg">
+                                    <div style={{fontWeight:700}}>Profile</div>
+                                    <div className="small muted" style={{marginTop:6}}>{user.email || 'no-email@example.com'}</div>
+                                    <div className="small muted" style={{marginTop:6}}>Member since {new Date(user.created_at || Date.now()).toLocaleDateString()}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="glass p-4 rounded-xl small muted">
+                            <div style={{fontWeight:700, marginBottom:8}}>Tips</div>
+                            <ul style={{paddingLeft:16, margin:0}}>
+                                <li>• Start small: 2 minutes daily wins</li>
+                                <li>• Focus on consistency over perfection</li>
+                                <li>• Check this app every day — neon motivation ✨</li>
+                            </ul>
+                        </div>
+                    </aside>
+                </div>
+
+                <div style={{textAlign:'center', marginTop:18}} className="small muted">Habit v6.1.21 • built with ❤️</div>
+            </div>
+        );
+    }
+
+    ReactDOM.render(<App />, document.getElementById('app'));
+</script>
+</body>
+</html>
